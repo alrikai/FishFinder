@@ -2,6 +2,9 @@ import os
 import glob
 import re
 
+import numpy as np
+from PIL import Image
+
 def natural_sort(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]
@@ -91,3 +94,86 @@ def read_fish_dataset(seqlist_path, fishdata_path):
 
     dset_data_list = remap_ids(dset_data_list)
     return dset_data_list
+
+def clip_bounding_box(bbox, bounds):
+    '''
+    bbox: bounding box [row low, row high, col low, col high]
+    bounds: allowable coordinates [row low, row high, col low, col high]
+
+    returns the bounding box clipped to the allowable coordinate ranges
+    '''
+    row_bounds = np.clip(bbox[0:2], bounds[0], bounds[1])
+    col_bounds = np.clip(bbox[2:4], bounds[2], bounds[3])
+    bbox = [*row_bounds, *col_bounds]
+    return bbox
+
+def run_annotation_correction(seqlist_path, fishdata_path):
+    dset_data_list = {}
+    with open(seqlist_path, 'rt') as f:
+        for seqname in f:
+            #strip any newlines, etc
+            dset_name = seqname[:-1].strip()
+            seq_metadata_dir = os.path.join(fishdata_path, dset_name)
+            assert(os.path.exists(seq_metadata_dir))
+            detections_dir = os.path.join(seq_metadata_dir, 'Detections')
+
+            image_paths = sorted(glob.glob(os.path.join(seq_metadata_dir, '*.jpg')), key=natural_sort)
+            seq_datapaths = [{'detections': None, 'frame': imgp} for imgp in image_paths]
+            bbox_files = sorted(glob.glob(os.path.join(detections_dir, '*.txt')), key=natural_sort)
+
+            hard_errors = []
+
+            #NOTE: the -1 is to correct for incorrect numbering from the fishlabeler app
+            for bbox_file in bbox_files:
+                bbox_fnum = int(os.path.basename(bbox_file).split('.')[0]) - 1
+                detections = {}
+                #get the detections from the file
+                with open(bbox_file, 'rt') as f:
+                    img_fpath = image_paths[bbox_fnum]
+                    img = Image.open(img_fpath)
+                    width, height = img.size
+                    for bbox_info in f:
+                        bbox_data = [int(bbox.strip()) for bbox in bbox_info.split(',')]
+                        inst_id, c1, r1, c2, r2 = bbox_data
+                        #also sort the coordinates, so it is [low, high] order
+                        clow = min(c1, c2)
+                        chigh = max(c1, c2)
+                        rlow = min(r1, r2)
+                        rhigh = max(r1, r2)
+                        #clip coordinates according to corresponding frame dimensions
+                        bbox_coords = clip_bounding_box([clow, chigh, rlow, rhigh], [0, width, 0, height])
+
+                        #if bbox_coords != bbox_data[1::]:
+                        #    print ('{} --> {}'.format(bbox_data[1::], bbox_coords))
+
+                        #filter out any erronious boxes (i.e. ones that are < 1px in area)
+                        bbox_area = abs(chigh-clow) * abs(rhigh-rlow)
+                        if bbox_area > 1:
+                            #check if this detection is  duplicate instance ID
+                            if inst_id in detections:
+                                #check if this is a duplicate of the box already there
+                                #-- if so, then ignore it. If not, then it's a user
+                                #error and we need user-help to correct it
+                                prev_bbox = detections[inst_id]
+                                if bbox_coords == prev_bbox:
+                                    print('Removing duplicate detection @inst {} file {}'.format(inst_id, bbox_file))
+                                else:
+                                    hard_error = {'file': bbox_file, 'id': inst_id}
+                                    hard_errors.append(hard_error)
+                            else:
+                                #NOTE: the bbox is now stored [col low, col high, row low, row high]
+                                detections[inst_id] = bbox_coords
+
+                seq_datapaths[bbox_fnum]['detections'] = detections
+                #NOTE: this is the corrected frame index
+                seq_datapaths[bbox_fnum]['fnum'] = bbox_fnum
+
+            if len(hard_errors) > 0:
+                print('{}: {} #HARD ERRORS'.format(dset_name, len(hard_errors)))
+                for error in hard_errors:
+                    print('{} ERROR -- @file {}'.format(error['id'], error['file']))
+                print('Correct the above errors, then re-run the correction on this sequence')
+                return (False, {})
+            else:
+                dset_data_list[dset_name] = seq_datapaths
+    return (True, dset_data_list)
