@@ -70,10 +70,7 @@ def create_output_dirstructure(basepath, seqlist_fpath):
         os.makedirs(lists_dir)
     return directory_dict
 
-def repackage_dataset(args):
-    seqlist_path = args['--seqlist']
-    fishdata_path = args['--datapath']
-    outdata_path = args['--outpath']
+def repackage_dataset(seqlist_path, fishdata_path, outdata_path):
 
     directory_dict = create_output_dirstructure(outdata_path, seqlist_path)
 
@@ -102,4 +99,8 @@ def repackage_dataset(args):
 if __name__ == "__main__":
     args = docopt.docopt(docstr, version='v0.1')
     print(args)
-    repackage_dataset(args)
+    seqlist_path = args['--seqlist']
+    fishdata_path = args['--datapath']
+    outdata_path = args['--outpath']
+
+    repackage_dataset(seqlist_path, fishdata_path, outdata_path)

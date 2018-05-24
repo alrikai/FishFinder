@@ -72,6 +72,7 @@ class NRTFish():
         for instid, bbox in detection_metadata.items():
             #change to [upleft x, upleft y, width, height]
             coco_bbox = [bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]-bbox[1]]
+            assert(not any([c < 0 for c in coco_bbox]))
             metadata = {
                 'id': instid,
                 'image_id': frame_idx,
@@ -105,17 +106,17 @@ class NRTFish():
         return img_metadata
 
 
-def make_dataset():
+def make_dataset(seqlist_path, data_basedir):
     fishdataset = NRTFish()
-    seqlist_path = 'data/lists/all.txt'
-    data_basedir = '/home/alrik/Data/NRTFishAnnotations_FixFix'
-
     mscoco_fdata = fishdataset.generate_dataset(seqlist_path, data_basedir)
     print('got {} #frames'.format(len(mscoco_fdata['images'])))
 
-    output_file = 'NRT_coco_fish.json'
-    with open(output_file, mode='wt') as jfid:
+    dset_type = os.path.basename(seqlist_path).split('.')[0]
+    output_fname = 'nrtfish_' + dset_type + '.json'
+    with open(output_fname, mode='wt') as jfid:
         json.dump(mscoco_fdata, jfid, indent=4, default=str)
 
 if __name__ == "__main__":
-    make_dataset()
+    seqlist_path = 'data/lists/all.txt'
+    data_basedir = '/home/alrik/Data/NRTFishAnnotations_FixFix'
+    make_dataset(seqlist_path, data_basedir)

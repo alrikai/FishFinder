@@ -23,10 +23,15 @@ def read_fish_sequence(image_dir, detection_path):
             for bbox_info in f:
                 bbox_data = [int(bbox.strip()) for bbox in bbox_info.split(',')]
                 inst_id, c1, r1, c2, r2 = bbox_data
+                c1,c2 = sorted([c1,c2])
+                r1,r2 = sorted([r1,r2])
+
                 #filter out any erronious boxes (i.e. ones that are < 1px in area)
                 bbox_area = abs(c2-c1) * abs(r2-r1)
                 if bbox_area > 1:
                     assert(inst_id not in detections)
+                    assert(all([c >= 0 for c in bbox_data]))
+                    assert(c2 > c1 and r2 > r1)
                     detections[inst_id] = [c1, r1, c2, r2]
 
         #NOTE: the -1 is to correct for incorrect numbering from the fishlabeler app
@@ -152,18 +157,17 @@ def run_annotation_correction(seqlist_path, fishdata_path):
                         bbox_data = [int(bbox.strip()) for bbox in bbox_info.split(',')]
                         inst_id, c1, r1, c2, r2 = bbox_data
                         #also sort the coordinates, so it is [low, high] order
-                        clow = min(c1, c2)
-                        chigh = max(c1, c2)
-                        rlow = min(r1, r2)
-                        rhigh = max(r1, r2)
+                        col_bounds = sorted([c1, c2])
+                        row_bounds = sorted([r1, r2])
+                        bbox_coords = [*col_bounds, *row_bounds]
                         #clip coordinates according to corresponding frame dimensions
-                        bbox_coords = clip_bounding_box([clow, chigh, rlow, rhigh], [0, width, 0, height])
+                        bbox_coords = clip_bounding_box(bbox_coords, [0, width, 0, height])
 
                         #if bbox_coords != bbox_data[1::]:
                         #    print ('{} --> {}'.format(bbox_data[1::], bbox_coords))
 
                         #filter out any erronious boxes (i.e. ones that are < 1px in area)
-                        bbox_area = abs(chigh-clow) * abs(rhigh-rlow)
+                        bbox_area = abs(bbox_coords[1] - bbox_coords[0]) * abs(bbox_coords[3] - bbox_coords[2])
                         if bbox_area > 1:
                             #check if this detection is  duplicate instance ID
                             if inst_id in detections:
@@ -177,6 +181,7 @@ def run_annotation_correction(seqlist_path, fishdata_path):
                                     hard_error = {'file': bbox_file, 'id': inst_id}
                                     hard_errors.append(hard_error)
                             else:
+                                assert(bbox_coords[1] > bbox_coords[0] and bbox_coords[3] > bbox_coords[2])
                                 #NOTE: the bbox is now stored [col low, col high, row low, row high]
                                 detections[inst_id] = bbox_coords
 
