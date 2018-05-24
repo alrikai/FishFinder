@@ -112,7 +112,8 @@ def make_dataset(seqlist_path, data_basedir):
 
     dset_type = os.path.basename(seqlist_path).split('.')[0]
     output_fname = 'nrtfish_' + dset_type + '.json'
-    with open(output_fname, mode='wt') as jfid:
+    output_fpath = os.path.join(data_basedir, output_fname)
+    with open(output_fpath, mode='wt') as jfid:
         json.dump(mscoco_fdata, jfid, indent=4, default=str)
 
 if __name__ == "__main__":

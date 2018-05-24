@@ -128,6 +128,28 @@ def clip_bounding_box(bbox, bounds):
     bbox = [*row_bounds, *col_bounds]
     return bbox
 
+def correct_detection(bbox_data, bbox_bounds):
+    '''
+    takes a detection in, returns the 'corrected' detection, and a flag indicating
+    whether it should be kept or discarded
+    '''
+
+    inst_id, c1, r1, c2, r2 = bbox_data
+    #also sort the coordinates, so it is [low, high] order
+    col_bounds = sorted([c1, c2])
+    row_bounds = sorted([r1, r2])
+    bbox_coords = [*col_bounds, *row_bounds]
+    #clip coordinates according to corresponding frame dimensions
+    bbox_coords = clip_bounding_box(bbox_coords, bbox_bounds)
+
+    #filter out any erronious boxes (i.e. ones that are < 1px in area)
+    bbox_area = abs(bbox_coords[1] - bbox_coords[0]) * abs(bbox_coords[3] - bbox_coords[2])
+
+    keep_bbox = bbox_area > 1
+    corrected_detection = [inst_id, *bbox_coords]
+    return (keep_bbox, corrected_detection)
+
+
 def run_annotation_correction(seqlist_path, fishdata_path):
     dset_data_list = {}
     with open(seqlist_path, 'rt') as f:
@@ -155,20 +177,12 @@ def run_annotation_correction(seqlist_path, fishdata_path):
                     width, height = img.size
                     for bbox_info in f:
                         bbox_data = [int(bbox.strip()) for bbox in bbox_info.split(',')]
-                        inst_id, c1, r1, c2, r2 = bbox_data
-                        #also sort the coordinates, so it is [low, high] order
-                        col_bounds = sorted([c1, c2])
-                        row_bounds = sorted([r1, r2])
-                        bbox_coords = [*col_bounds, *row_bounds]
-                        #clip coordinates according to corresponding frame dimensions
-                        bbox_coords = clip_bounding_box(bbox_coords, [0, width, 0, height])
+                        #run the correction steps on the detection, fix or filter out the detection accordingly
+                        keep_detection, detection_bbox = correct_detection(bbox_data, [0, width, 0, height])
+                        if keep_detection:
+                            inst_id = detection_bbox[0]
+                            bbox_coords = detection_bbox[1::]
 
-                        #if bbox_coords != bbox_data[1::]:
-                        #    print ('{} --> {}'.format(bbox_data[1::], bbox_coords))
-
-                        #filter out any erronious boxes (i.e. ones that are < 1px in area)
-                        bbox_area = abs(bbox_coords[1] - bbox_coords[0]) * abs(bbox_coords[3] - bbox_coords[2])
-                        if bbox_area > 1:
                             #check if this detection is  duplicate instance ID
                             if inst_id in detections:
                                 #check if this is a duplicate of the box already there

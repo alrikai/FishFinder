@@ -70,9 +70,20 @@ def create_output_dirstructure(basepath, seqlist_fpath):
         os.makedirs(lists_dir)
     return directory_dict
 
-def repackage_dataset(seqlist_path, fishdata_path, outdata_path):
+def repackage_dataset(seqlist_path, fishdata_path, outdata_path, correction_path=None):
+    '''
+    seqlist_path: path to the text file with the list of sequences to repackage
+    fishdata_path: path to the root directory of the NRTFish data
+    outdata_path: path to the root directory to write output to
+    correction_path: (optional) path to metadata (e.g. if corrected metadata was not done in-place)
+    '''
 
     directory_dict = create_output_dirstructure(outdata_path, seqlist_path)
+
+    if correction_path is None:
+        metadata_path = fishdata_path
+    else:
+        metadata_path = correction_path
 
     #copy the data from fishdata_path to the file structure in outdata_path
     with open(seqlist_path, 'rt') as f:
@@ -88,7 +99,7 @@ def repackage_dataset(seqlist_path, fishdata_path, outdata_path):
                 shutil.copy2(image, dst_image_dir)
 
             dst_annotation_dir = directory_dict[dset_name]['detdir']
-            src_annotation_dir = os.path.join(fishdata_path, dset_name, 'Detections')
+            src_annotation_dir = os.path.join(metadata_path, dset_name, 'Detections')
             bbox_files = sorted(glob.glob(os.path.join(src_annotation_dir, '*.txt')), key=utils.natural_sort)
             print ('seq {} --> {} #detections'.format(dset_name, len(bbox_files)))
             for bbox_f in bbox_files:
