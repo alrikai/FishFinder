@@ -9,7 +9,7 @@ def natural_sort(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]
 
-def read_fish_sequence(detection_path, image_dir):
+def read_fish_sequence(image_dir, detection_path):
     '''
     gathers the detection bounding boxes and associated frames
     '''
@@ -73,13 +73,28 @@ def remap_ids(seq_metadata):
 def read_fish_dataset(seqlist_path, fishdata_path):
     '''
     NOTE: we assume the layout of
-    fishdata_path/
-         |__ [seqnames]/
-                |_____ [frames]
-                |______detections/
-                            |_____ [bbox files]
-                |______annotations/ (unused for tracking)
-                |______metadata/ (unused for now)
+     NRTFish
+        |
+        |------ Images
+        |         |
+        |         ----- dset <#1> --> fnum 0 ~ fnum M1
+        |         |        ...
+        |         |
+        |         ----- dset <#N> --> fnum 0 ~ fnum MN
+        |
+        |--- Annotations
+        |         |
+        |         ----- dset <#1> --> detection 0 ~ detection K1
+        |         |        ...
+        |         |
+        |         ----- dset <#N> --> detection 0 ~ detection KN
+        |
+        |---- ImageSets
+        |         |
+        |         ----- <all.txt | train.txt | test.txt | val.txt>
+      __|__
+       ___
+        _
     '''
 
     dset_data_list = {}
@@ -87,10 +102,11 @@ def read_fish_dataset(seqlist_path, fishdata_path):
         for seqname in f:
             #strip any newlines, etc
             dset_name = seqname[:-1].strip()
-            seq_metadata_dir = os.path.join(fishdata_path, dset_name)
-            assert(os.path.exists(seq_metadata_dir))
-            detections_dir = os.path.join(seq_metadata_dir, 'Detections')
-            dset_data_list[dset_name] = read_fish_sequence(detections_dir, seq_metadata_dir)
+
+            assert(os.path.exists(fishdata_path))
+            images_dir = os.path.join(fishdata_path, 'Images', dset_name)
+            detections_dir = os.path.join(fishdata_path, 'Annotations', dset_name)
+            dset_data_list[dset_name] = read_fish_sequence(images_dir, detections_dir)
 
     dset_data_list = remap_ids(dset_data_list)
     return dset_data_list

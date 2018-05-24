@@ -108,7 +108,7 @@ class NRTFish():
 def make_dataset():
     fishdataset = NRTFish()
     seqlist_path = 'data/lists/all.txt'
-    data_basedir = '/home/alrik/Data/NRTFishAnnotations_Fix'
+    data_basedir = '/home/alrik/Data/NRTFishAnnotations_FixFix'
 
     mscoco_fdata = fishdataset.generate_dataset(seqlist_path, data_basedir)
     print('got {} #frames'.format(len(mscoco_fdata['images'])))

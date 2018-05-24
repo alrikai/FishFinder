@@ -38,6 +38,8 @@ if is_valid:
                 for instid, bbox in sdet['detections'].items():
                     clow, chigh, rlow, rhigh = bbox
                     fout.write('{}, {}, {}, {}, {}\n'.format(instid, clow, rlow, chigh, rhigh))
+else:
+    print('Fix aforementioned errors and re-run the correction')
 
 #TODO: look for:
 # - invalid bounding boxes (i.e clip negative coordinates, ones out of bounds)
