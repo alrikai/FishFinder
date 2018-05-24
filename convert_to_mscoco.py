@@ -105,7 +105,6 @@ class NRTFish():
         self.frame_idx += 1
         return img_metadata
 
-
 def make_dataset(seqlist_path, data_basedir):
     fishdataset = NRTFish()
     mscoco_fdata = fishdataset.generate_dataset(seqlist_path, data_basedir)

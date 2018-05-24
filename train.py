@@ -1,6 +1,9 @@
 import docopt
 
 import utils
+import fishdataset as fdset
+
+from torch.utils.data import DataLoader
 
 docstr = """NRTFish Tracking-by-Detection
 
@@ -20,6 +23,13 @@ print(args)
 seqlist_path = args['--seqlist']
 fishdata_path = args['--datapath']
 
-datalist = utils.read_fish_dataset(seqlist_path, fishdata_path)
+num_epochs = 1
+dataset = fdset.FishData(seqlist_path, fishdata_path, 'train')
+fish_dloader = DataLoader(dataset)
 
-
+for epoch_idx in range(num_epochs):
+    print ('epoch: {} / {} starting'.format(epoch_idx, num_epochs))
+    for frame_idx, fishbatch in enumerate(fish_dloader):
+        if frame_idx == 0:
+            dtks = fish_dloader.dataset.seq_dets
+            print ('sequence: {} --> {} #detections'.format(fish_dloader.dataset.sequence_key(), len(dtks)))
