@@ -61,6 +61,9 @@ class NRTFish():
         dataset['images'].extend(images)
         dataset['annotations'].extend(annotations)
 
+        #TODO: do we need to list all 80 COCO categories, if we don't want to adjust the names?
+        dataset['categories'] = [self.category]
+
         return dataset
 
     def generate_annotation_metadata(self, frame_idx, detection_metadata):
@@ -112,7 +115,8 @@ def make_dataset(seqlist_path, data_basedir):
 
     dset_type = os.path.basename(seqlist_path).split('.')[0]
     output_fname = 'nrtfish_' + dset_type + '.json'
-    output_fpath = os.path.join(data_basedir, output_fname)
+    #NOTE: detectron seems to look in the Annotations folder for this
+    output_fpath = os.path.join(data_basedir, 'Annotations', output_fname)
     with open(output_fpath, mode='wt') as jfid:
         json.dump(mscoco_fdata, jfid, indent=4, default=str)
 
