@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import docopt
 import correct_detections as fixdet
 import package_dataset as packdset
@@ -16,17 +19,23 @@ Options:
     --seqlist=<str>             list of sequences to run
 """
 
-def generate_dataset(seqlist_path, fishdata_path, metadata_path, coco_outdata_path):
+def generate_dataset(seqlist_path, fishdata_path, scratchdata_path, coco_outdata_path):
     #fix any errors (user or otherwise) that slip through the labeling, if any hard
     #errors, exit and have user fix
-    fixed_det = fixdet.correct_detections(seqlist_path, fishdata_path, metadata_path)
+    if not os.path.exists(scratchdata_path):
+        os.makedirs(scratchdata_path)
+
+    fixed_det = fixdet.correct_detections(seqlist_path, fishdata_path, scratchdata_path)
     if not fixed_det:
         return False
 
     #re-arrange the dataset files to conform to dataset filesystem layout
-    packdset.repackage_dataset(seqlist_path, fishdata_path, coco_outdata_path, correction_path=metadata_path)
+    packdset.repackage_dataset(seqlist_path, fishdata_path, coco_outdata_path, correction_path=scratchdata_path)
     #make the mscoco-style json file
     cocodset.make_dataset(seqlist_path, coco_outdata_path)
+
+    #remove the scratch data, since this should just be a temporary folder
+    shutil.rmtree(scratchdata_path)
 
 if __name__ == "__main__":
     args = docopt.docopt(docstr, version='v0.1')
@@ -34,7 +43,7 @@ if __name__ == "__main__":
 
     seqlist_path = args['--seqlist']
     fishdata_path = args['--datapath']
-    metadata_path = args['--scratchpath']
+    scratchdata_path = args['--scratchpath']
     coco_outdata_path = args['--coco_outpath']
 
-    generate_dataset(seqlist_path, fishdata_path, metadata_path, coco_outdata_path)
+    generate_dataset(seqlist_path, fishdata_path, scratchdata_path, coco_outdata_path)

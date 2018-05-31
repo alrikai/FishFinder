@@ -14,10 +14,11 @@ def read_fish_sequence(image_dir, detection_path):
     gathers the detection bounding boxes and associated frames
     '''
     image_paths = sorted(glob.glob(os.path.join(image_dir, '*.jpg')), key=natural_sort)
-    seq_datapaths = [{'detections': None, 'frame': imgp} for imgp in image_paths]
     bbox_files = sorted(glob.glob(os.path.join(detection_path, '*.txt')), key=natural_sort)
-    for bbox_file in bbox_files:
+    seq_datapaths = [{'detections': None, 'frame': imgp, 'fnum': int(os.path.basename(imgp).split('.')[0])} for imgp in image_paths]
+    for bbox_fnum, bbox_file in enumerate(bbox_files):
         detections = {}
+        bbox_fname = os.path.basename(bbox_file).split('.')[0]
         #get the detections from the file
         with open(bbox_file, 'rt') as f:
             for bbox_info in f:
@@ -35,9 +36,16 @@ def read_fish_sequence(image_dir, detection_path):
                     detections[inst_id] = [c1, r1, c2, r2]
 
         #NOTE: the -1 is to correct for incorrect numbering from the fishlabeler app
-        bbox_fnum = int(os.path.basename(bbox_file).split('.')[0]) - 1
-        seq_datapaths[bbox_fnum]['detections'] = detections
+        #seq_datapaths[bbox_idx]['detections'] = detections
+        #bbox_fnum = int(os.path.basename(bbox_file).split('.')[0])
+        #seq_datapaths[bbox_idx]['fnum'] = bbox_fnum
+
+        #NOTE: this is the corrected frame index
+        seq_foffset = int(bbox_fname) - seq_datapaths[bbox_fnum]['fnum'] + bbox_fnum
+        seq_datapaths[seq_foffset]['fnum'] = int(bbox_fname)
+        seq_datapaths[seq_foffset]['detections'] = detections
     return seq_datapaths
+
 
 def remap_ids(seq_metadata):
     #map each id to a unique ID
@@ -161,18 +169,20 @@ def run_annotation_correction(seqlist_path, fishdata_path):
             detections_dir = os.path.join(seq_metadata_dir, 'Detections')
 
             image_paths = sorted(glob.glob(os.path.join(seq_metadata_dir, '*.jpg')), key=natural_sort)
-            seq_datapaths = [{'detections': None, 'frame': imgp} for imgp in image_paths]
             bbox_files = sorted(glob.glob(os.path.join(detections_dir, '*.txt')), key=natural_sort)
+            seq_datapaths = [{'detections': None, 'frame': imgp, 'fnum': int(os.path.basename(imgp).split('.')[0])} for imgp in image_paths]
 
             hard_errors = []
-
-            #NOTE: the -1 is to correct for incorrect numbering from the fishlabeler app
-            for bbox_file in bbox_files:
-                bbox_fnum = int(os.path.basename(bbox_file).split('.')[0]) - 1
+            for bbox_fnum, bbox_file in enumerate(bbox_files):
+                #bbox_fnum = int(os.path.basename(bbox_file).split('.')[0])
                 detections = {}
+                bbox_fname = os.path.basename(bbox_file).split('.')[0]
                 #get the detections from the file
                 with open(bbox_file, 'rt') as f:
-                    img_fpath = image_paths[bbox_fnum]
+                    matching_imgs = [impath for impath in image_paths if bbox_fname in impath]
+                    assert(len(matching_imgs) == 1)
+                    img_fpath = matching_imgs[0]
+
                     img = Image.open(img_fpath)
                     width, height = img.size
                     for bbox_info in f:
@@ -199,9 +209,10 @@ def run_annotation_correction(seqlist_path, fishdata_path):
                                 #NOTE: the bbox is now stored [col low, col high, row low, row high]
                                 detections[inst_id] = bbox_coords
 
-                seq_datapaths[bbox_fnum]['detections'] = detections
                 #NOTE: this is the corrected frame index
-                seq_datapaths[bbox_fnum]['fnum'] = bbox_fnum
+                seq_foffset = int(bbox_fname) - seq_datapaths[bbox_fnum]['fnum'] + bbox_fnum
+                seq_datapaths[seq_foffset]['fnum'] = int(bbox_fname)
+                seq_datapaths[seq_foffset]['detections'] = detections
 
             if len(hard_errors) > 0:
                 print('{}: {} #HARD ERRORS'.format(dset_name, len(hard_errors)))

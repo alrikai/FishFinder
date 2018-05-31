@@ -32,6 +32,7 @@ class NRTFish():
         }
 
         self.frame_idx = 0
+        self.meta_idx = 0
 
     def generate_dataset(self, seqlist_path, data_dir):
         dataset = {
@@ -53,6 +54,7 @@ class NRTFish():
             images.extend(frame_metadata)
 
             #NOTE: each bounding box will be a seperate annotation
+            #TODO: I think each bounding box should have a unique ID
             for frame_idx, annotation in enumerate(seqdata):
                 if annotation['detections'] is not None:
                     annotation_metadata = self.generate_annotation_metadata(base_frame_idx + frame_idx, annotation['detections'])
@@ -77,7 +79,7 @@ class NRTFish():
             coco_bbox = [bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]-bbox[1]]
             assert(not any([c < 0 for c in coco_bbox]))
             metadata = {
-                'id': instid,
+                'id': self.meta_idx,
                 'image_id': frame_idx,
                 'category_id': self.category['id'],
                 'segmentation': [],
@@ -86,6 +88,7 @@ class NRTFish():
                 'iscrowd': 0
             }
             annotation_metadata.append(metadata)
+            self.meta_idx += 1
         return annotation_metadata
 
     def generate_image_metadata(self, image_fname):
@@ -97,8 +100,8 @@ class NRTFish():
         data_date = image_fname.split(os.sep)[-2][:8]
         img_metadata = {
             'id': self.frame_idx,
-            'width': height,
-            'height': width,
+            'width': width,
+            'height': height,
             'file_name': image_filename,
             'license': 0,
             'flickr_url': '',
