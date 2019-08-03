@@ -1,6 +1,7 @@
 import os
 import glob
 import re
+import json
 import pickle as pkl
 
 import numpy as np
@@ -283,4 +284,33 @@ def merge_fish_proposals(fish_proposals):
             assert(nframes == len(fish_proposals[detector_idx]))
             det_proposals[frame_idx].extend(fish_proposals[detector_idx][frame_idx])
     return det_proposals
+
+def load_detectron_detections(data_path, det_path, threshold=0.2):
+
+    with open(det_path, 'rt') as f:
+        dets = json.load(f)
+    with open(data_path, 'rt') as f:
+        data = json.load(f)
+
+    #o get the data paths rather than just the image ID's... I think
+    feature_dets = {}
+    for det in dets:
+        if det['score'] > threshold:
+            det_imgid = det['image_id']
+            #get the data path to the specified data id
+            if data['images'][det_imgid] != det_imgid:
+                #search for the correct one
+                det_path = [d['file_name'] for d in data['images'] if d['id'] == det_imgid]
+            else:
+                det_path = [data['images'][det_imgid]['file_name']]
+
+            assert(len(det_path) == 1)
+            dimg_path = det_path[0]
+
+            if det_imgid in feature_dets:
+                feature_dets[det_imgid]['detections'].append({'bbox': det['bbox'], 'score': det['score']})
+            else:
+                feature_dets[det_imgid] = {'detections': [{'bbox': det['bbox'], 'score': det['score']}], 'file_path': dimg_path}
+    return feature_dets, (data['images'][0]['height'], data['images'][0]['width'])
+
 
