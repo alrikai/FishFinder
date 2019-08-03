@@ -225,6 +225,29 @@ def run_annotation_correction(seqlist_path, fishdata_path):
                 dset_data_list[dset_name] = seq_datapaths
     return (True, dset_data_list)
 
+def collect_fish_annotations(seqlist_path, fishannotation_path):
+
+    global_track_id = 0
+    dset_data_list = {}
+    with open(seqlist_path, 'rt') as f:
+        for seqname in f:
+            #strip any newlines, etc
+            dset_name = seqname[:-1].strip()
+            detections_dir = os.path.join(fishannotation_path, dset_name)
+            assert(os.path.exists(detections_dir))
+
+            detections = []
+            bbox_files = sorted(glob.glob(os.path.join(detections_dir, '*.txt')), key=natural_sort)
+            for bbox_fnum, bbox_file in enumerate(bbox_files):
+                #bbox_fnum = int(os.path.basename(bbox_file).split('.')[0])
+                #get the detections from the file
+                with open(bbox_file, 'rt') as f:
+                    for bbox_info in f:
+                        bbox_data = [int(bbox.strip()) for bbox in bbox_info.split(',')]
+                        detections.append(bbox_data)
+
+            dset_data_list[dset_name] = detections
+    return dset_data_list
 
 def read_fish_proposals(det_fnamelist, det_fkeys=None):
     '''
