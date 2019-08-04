@@ -25,10 +25,8 @@ inst_colors = [(255, 0, 0),       #id 0: B
 
 
 def vis_bbox(img, bbox, idx, thick=2):
-    """Visualizes a bounding box."""
+    """Visualizes a bounding box. Takes coordinates as [x0, y0, x1, y1] """
     (x0, y0, x1, y1) = bbox
-    #x1, y1 = int(x0 + w), int(y0 + h)
-    #x0, y0 = int(x0), int(y0)
     color = inst_colors[idx % len(inst_colors)]
     cv2.rectangle(img, (x0, y0), (x1, y1), color, thickness=thick)
     return img

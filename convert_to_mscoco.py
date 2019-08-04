@@ -5,6 +5,17 @@ import os
 from PIL import Image
 import utils
 
+docstr = """Format NRTFish labels into MS COCO format
+
+Usage:
+    convert_to_mscoco.py [options]
+
+Options:
+    -h, --help                  Print this message
+    --seqlist_path=<str>        File list
+    --data_basedir<str>         Output directory to write formatted dataset
+"""
+
 class NRTFish():
     def __init__(self):
         self.default_dtime = datetime.datetime.now()
@@ -124,6 +135,9 @@ def make_dataset(seqlist_path, data_basedir):
         json.dump(mscoco_fdata, jfid, indent=4, default=str)
 
 if __name__ == "__main__":
-    seqlist_path = 'data/lists/all.txt'
-    data_basedir = '/home/alrik/Data/NRTFishAnnotations_FixFix'
-    make_dataset(seqlist_path, data_basedir)
+    args = docopt.docopt(docstr, version='v0.1')
+    print(args)
+ 
+    seqlist_path = args['--seqlist_path'] #'data/lists/all.txt'
+    output_basedir = args['--data_basedir'] # = '/home/alrik/Data/NRTFishAnnotations_FixFix'
+    make_dataset(seqlist_path, output_basedir)
