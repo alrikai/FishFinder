@@ -2,9 +2,9 @@ import os
 import shutil
 
 import docopt
-import correct_detections as fixdet
-import package_dataset as packdset
-import convert_to_mscoco as cocodset
+import fishfinder.correct_detections as fixdet
+import fishfinder.package_dataset as packdset
+import fishfinder.convert_to_mscoco as cocodset
 
 docstr = """Generate NRTFish Detection Dataset
 

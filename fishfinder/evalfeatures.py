@@ -1,7 +1,7 @@
 import docopt
 import time
 
-import fishdataset as fdset
+import fishfinder.fishdataset as fdset
 from features import generate_features as featgen
 
 docstr = """NRTFish Tracking-by-Detection

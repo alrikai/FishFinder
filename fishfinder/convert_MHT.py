@@ -1,13 +1,12 @@
 import os
 import json
-import sys
 
 import docopt
 #from sklearn.decomposition import PCA
 import scipy.io
 import numpy as np
 
-import utils
+from fishfinder.utils import read_fish_dataset, load_detectron_detections
 
 docstr = """Generate NRTFish Detection Dataset
 
@@ -75,7 +74,7 @@ class CocoMapper:
             return None
 
 def run_MHT_cvt(detfeat_datadir, coco_datainfo, detection_info, mht_dir):
-    det_proposal_info = utils.load_detectron_detections(coco_datainfo, detection_info)
+    det_proposal_info = load_detectron_detections(coco_datainfo, detection_info)
     id_mapper = CocoMapper(coco_datainfo)
     with open(coco_datainfo, 'rt') as f:
         nhfish_data = json.load(f)
@@ -87,7 +86,7 @@ def run_MHT_cvt(detfeat_datadir, coco_datainfo, detection_info, mht_dir):
     fishdata_path = '/home/alrik/Data/NRTFish/val'
     seqlist_path = 'data/lists/val.txt'
     #NOTE: this is the data on disk from the labeling, not in coco format
-    nhfish_dset = utils.read_fish_dataset(seqlist_path, fishdata_path)
+    nhfish_dset = read_fish_dataset(seqlist_path, fishdata_path)
 
     #for each sequence, grab out the corresponding cnn features and save them out
     for seq_name in id_mapper.img_to_id.keys():
@@ -173,7 +172,7 @@ def run_MHT_cvt(detfeat_datadir, coco_datainfo, detection_info, mht_dir):
     scipy.io.savemat(scio_featfile, mat_structure)
 
 def large_mht(detfeat_datadir, coco_datainfo, detection_info, mht_dir):
-    det_proposal_info = utils.load_detectron_detections(coco_datainfo, detection_info)
+    det_proposal_info = load_detectron_detections(coco_datainfo, detection_info)
     id_mapper = coco_mapper(coco_datainfo)
     with open(coco_datainfo, 'rt') as f:
         nhfish_data = json.load(f)

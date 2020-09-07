@@ -1,6 +1,6 @@
 import os
 import docopt
-import utils
+from fishfinder.utils import run_annotation_correction
 
 docstr = """NRTFish Detection Bounding Box Correction
 
@@ -15,7 +15,7 @@ Options:
 """
 
 def correct_detections(seqlist_path, fishdata_path, outdata_path):
-    is_valid, dset_data_list = utils.run_annotation_correction(seqlist_path, fishdata_path)
+    is_valid, dset_data_list = run_annotation_correction(seqlist_path, fishdata_path)
     if is_valid:
         for seqkey, seqdata in dset_data_list.items():
             seq_outdir = os.path.join(outdata_path, seqkey, 'Detections')

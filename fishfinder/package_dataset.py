@@ -3,7 +3,7 @@ import shutil
 import glob
 
 import docopt
-import utils
+from fishfinder.utils import natural_sort
 
 docstr = """NRTFish Detection Dataset Formatting
 
@@ -93,14 +93,14 @@ def repackage_dataset(seqlist_path, fishdata_path, outdata_path, correction_path
 
             dst_image_dir = directory_dict[dset_name]['imgdir']
             src_image_dir = os.path.join(fishdata_path, dset_name)
-            image_paths = sorted(glob.glob(os.path.join(src_image_dir, '*.jpg')), key=utils.natural_sort)
+            image_paths = sorted(glob.glob(os.path.join(src_image_dir, '*.jpg')), key=natural_sort)
             print ('seq {} --> {} #frames'.format(dset_name, len(image_paths)))
             for image in image_paths:
                 shutil.copy2(image, dst_image_dir)
 
             dst_annotation_dir = directory_dict[dset_name]['detdir']
             src_annotation_dir = os.path.join(metadata_path, dset_name, 'Detections')
-            bbox_files = sorted(glob.glob(os.path.join(src_annotation_dir, '*.txt')), key=utils.natural_sort)
+            bbox_files = sorted(glob.glob(os.path.join(src_annotation_dir, '*.txt')), key=natural_sort)
             print ('seq {} --> {} #detections'.format(dset_name, len(bbox_files)))
             for bbox_f in bbox_files:
                 #TODO: you technically should be splitting this out based on instance ID, I think?

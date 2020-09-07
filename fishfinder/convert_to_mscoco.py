@@ -3,7 +3,7 @@ import json
 import os
 
 from PIL import Image
-import utils
+from fishfinder import utils
 
 class NRTFish():
     def __init__(self):

@@ -1,7 +1,7 @@
 import os
 import json
 
-import generate_dataset as gen_dset
+import fishfinder.generate_dataset as gen_dset
 
 def verify_coco_json(coco_data):
     data_keys = list(coco_data.keys())
@@ -28,7 +28,7 @@ def verify_coco_json(coco_data):
 
         assert(det['bbox'] == expected_bboxes[mid])
 
-def run_cvt_test():
+def test_mscoco_conversion():
     data_path = 'data/tests/NRTFish'
     seq_tname = '314159265358979_test'
 
@@ -46,7 +46,6 @@ def run_cvt_test():
         os.makedirs(scratch_path)
     gen_dset.generate_dataset(tlist_fpath, data_path, scratch_path, out_dir)
 
-
     dset_type = os.path.basename(test_list_fname).split('.')[0]
     target_json_file = os.path.join(out_dir, 'nrtfish_' + dset_type + '.json')
     assert(os.path.exists(target_json_file))
@@ -55,7 +54,3 @@ def run_cvt_test():
     with open(target_json_file) as fid:
         det_data = json.load(fid)
         verify_coco_json(det_data)
-    print('if you reached here, then we cool man')
-
-if __name__ == "__main__":
-    run_cvt_test()
